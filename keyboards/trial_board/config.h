@@ -161,6 +161,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  #define OLED_FONT_WIDTH 6
  #define OLED_FONT_HEIGHT 6
  
- #define OLED_DISPLAY_WIDTH 128
- #define OLED_DISPLAY_HEIGHT 64
- 
+// #define OLED_DISPLAY_WIDTH 128
+// #define OLED_DISPLAY_HEIGHT 64
+
+/*
+ * If you want the BME280 information to be displayed on the OLED, 
+ * please remove your comments.
+ */
+#define USE_BME280

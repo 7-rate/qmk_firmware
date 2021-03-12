@@ -16,7 +16,21 @@
 #include QMK_KEYBOARD_H
 
 #include <stdio.h>
-#include "lib/bme280.h"
+
+#ifdef USE_BME280
+ #include "lib/bme280.h"
+#endif
+
+
+const char code_to_name[60] = {
+    ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
+    'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+    'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\', '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
+
+void set_keylog(uint16_t keycode, keyrecord_t *record);
+#ifdef USE_BME280
+void print_airstate(void);
+#endif
 
 extern rgblight_config_t rgblight_config;
 int RGB_current_mode;
@@ -44,21 +58,40 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     )
 };
 
+#ifdef USE_BME280
 void keyboard_post_init_user(void) {
     bme280_init();
 }
+
 void housekeeping_task_user(void) {
     bme280_exec();
 }
 
+void print_airstate(void) {
+    char airstate_str[32] = {};
+    double temp;
+    double press;
+    double hum;
+    temp = bme280_getTemp();
+    press = bme280_getPress();
+    hum = bme280_getHum();
+
+    snprintf(airstate_str, sizeof(airstate_str), "%d,  %d,  %d\n", (int)temp, (int)press, (int)hum );
+    oled_write(airstate_str, false);
+}
+#endif
+
+void oled_render_layer_state(void) {;}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (record->event.pressed) {
+    set_keylog(keycode, record);
+  }
+
+  return true;
+}
 
 char keylog_str[32] = {};
-
-const char code_to_name[60] = {
-    ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-    'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-    'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\', '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
-
 void set_keylog(uint16_t keycode, keyrecord_t *record) {
   char name = ' ';
     if ((keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) ||
@@ -78,30 +111,13 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
 }
 
 void oled_task_user(void) {
-    char airstate_str[32] = {};
-    double temp;
-    double press;
-    double hum;
+    oled_write_ln_P(PSTR("Hello TrialBoard!"), false);
 
-    oled_write_ln_P(PSTR("Hello TrialBoard!!"), false);
-
-    temp = bme280_getTemp();
-    press = bme280_getPress();
-    hum = bme280_getHum();
-
-    snprintf(airstate_str, sizeof(airstate_str), "%d,  %d,  %d\n", (int)temp, (int)press, (int)hum );
-
-    oled_write(airstate_str, false);
+#ifdef USE_BME280
+    print_airstate();
+#endif
     oled_write(keylog_str, false);
-
 }
 
-void oled_render_layer_state(void) {;}
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
-    set_keylog(keycode, record);
-  }
-    
-  return true;
-}
+
